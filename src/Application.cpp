@@ -78,8 +78,8 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
         xoffset *= camera->GetSensitivity();
         yoffset *= camera->GetSensitivity();
 
-        camera->rotateLeft(yoffset);
-        camera->rotateUp(xoffset);
+        camera->rotateLeft(xoffset);
+        camera->rotateUp(yoffset);
     }
 }
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)

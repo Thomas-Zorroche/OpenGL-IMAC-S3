@@ -7,8 +7,9 @@ class TrackballCamera
 {
 private:
 	float _distance;
-	float _theta;
-	float _phi;
+	float _theta;		// Rotation around Z or X axis
+	float _phi;			// Rotation around Y axis
+
 	bool _CanTurn;    // Is Able to Turn ?
 	float _lastX;     // Last Mouse coordinates
 	float _lastY;
@@ -41,8 +42,8 @@ public:
 	glm::mat4 getViewMatrix() const
 	{
 		glm::mat4 ViewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, _distance));
-		ViewMatrix = glm::rotate(ViewMatrix, glm::radians(_theta), glm::vec3(0, 1, 0));
-		ViewMatrix = glm::rotate(ViewMatrix, glm::radians(_phi), glm::vec3(1, 0, 0));
+		ViewMatrix = glm::rotate(ViewMatrix, glm::radians(_theta), glm::vec3(1, 0, 0));
+		ViewMatrix = glm::rotate(ViewMatrix, glm::radians(_phi), glm::vec3(0, 1, 0));
 
 		return ViewMatrix;
 	}
