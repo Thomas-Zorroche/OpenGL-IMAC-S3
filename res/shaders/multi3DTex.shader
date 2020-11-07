@@ -12,6 +12,7 @@ uniform mat4 u_NormalMatrix;
 // Sorties du VertexShader
 out vec3 vNormals_vs;
 out vec3 vPosition_vs;
+out vec2 vTexCoords;
 
 void main()
 {
@@ -22,8 +23,8 @@ void main()
     // Calcul des valeurs de sortie
     vPosition_vs = vec3(u_MV * vertexPosition);
     vNormals_vs = vec3(u_NormalMatrix * vertexNormal);
-    // vTexCoords = aTexCoords;
-   
+    vTexCoords = aTexCoords;
+
     gl_Position = u_MVP * vertexPosition;
 };
 
@@ -32,9 +33,12 @@ void main()
 
 out vec3 fFragColor;
 in vec3 vNormals_vs;
+in vec2 vTexCoords; 
+
+uniform sampler2D Texture;
+uniform sampler2D Clouds;
 
 void main()
 {
-    //fFragColor = vec3(normalize(vNormals_vs));
-    fFragColor = vec3(0.5f);
+    fFragColor = mix(vec3(texture(Texture, vTexCoords)), vec3(texture(Clouds, vTexCoords).r), 0.3);
 };

@@ -15,20 +15,25 @@ file(GLOB_RECURSE HEADER_FILES
 # Add .lib files
 link_directories(${CMAKE_SOURCE_DIR}/lib)
 
+# Add Shaders
+file(GLOB_RECURSE RES_FILES *.frag *.vert *.glsl *.shader)
+
 # Configure assets header file
 configure_file(src/helpers/RootDir.h src/helpers/RootDir.h)
 include_directories(${CMAKE_BINARY_DIR}/src)
 
 # Define the executable
-add_executable(${PROJECT_NAME} ${HEADER_FILES} ${SOURCE_FILES})
+add_executable(${PROJECT_NAME} ${HEADER_FILES} ${RES_FILES} ${SOURCE_FILES})
 
-# Add Shaders
-file(COPY ${CMAKE_SOURCE_DIR}/res/shaders/
-	DESTINATION ${CMAKE_BINARY_DIR}/res/shaders)
+
 
 # Add Textures
 file(COPY ${CMAKE_SOURCE_DIR}/res/img/
 	DESTINATION ${CMAKE_BINARY_DIR}/res/img)
+
+# Add Shaders
+file(COPY ${CMAKE_SOURCE_DIR}/res/shaders/
+	DESTINATION ${CMAKE_BINARY_DIR}/res/shaders)
 
 # External libraries
 

@@ -16,6 +16,43 @@
 
 #include "glimac/Sphere.hpp"
 
+struct EarthProgram
+{
+    Shader shader;
+
+    GLint u_MVP;
+    GLint u_MV;
+    GLint u_NormalMatrix;
+    GLuint texID;
+    GLuint texID_Clouds;
+
+    EarthProgram(const char * shaderPath) 
+        : shader(shaderPath) 
+    {
+        u_MVP = glGetUniformLocation(shader.getID(), "u_MVP");
+        u_MV = glGetUniformLocation(shader.getID(), "u_MV");
+        u_NormalMatrix = glGetUniformLocation(shader.getID(), "u_NormalMatrix");
+    }
+};
+
+struct MoonProgram
+{
+    Shader shader;
+
+    GLint u_MVP;
+    GLint u_MV;
+    GLint u_NormalMatrix;
+    GLuint texID;
+
+    MoonProgram(const char* shaderPath)
+        : shader(shaderPath)
+    {
+        u_MVP = glGetUniformLocation(shader.getID(), "u_MVP");
+        u_MV = glGetUniformLocation(shader.getID(), "u_MV");
+        u_NormalMatrix = glGetUniformLocation(shader.getID(), "u_NormalMatrix");
+    }
+};
+
 int main(void)
 {
     GLFWwindow* window;
@@ -81,28 +118,12 @@ int main(void)
     glBindVertexArray(0);
 
     // Shaders
-    Shader shader("res/shaders/3D.shader");
-    shader.Bind();
+    EarthProgram s_Earth("res/shaders/multi3DTex.shader");
+    MoonProgram s_Moon("res/shaders/3DTex.shader");
 
     // Matrices
-    glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 0));
     glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -5.0f));
     glm::mat4 projection = glm::perspective(glm::radians(45.0f), 900.0f / 640.0f, 0.1f, 100.0f);
-
-    glm::mat4 MVP = projection * view * model;
-    glm::mat4 MV = view * model;
-    glm::mat4 NormalMatrix = glm::transpose(glm::inverse(MV));
-    
-    unsigned int loc_MVP = glGetUniformLocation(shader.getID(), "u_MVP");
-    glUniformMatrix4fv(loc_MVP, 1, GL_FALSE, &MVP[0][0]);
-
-    unsigned int loc_MV = glGetUniformLocation(shader.getID(), "u_MV");
-    glUniformMatrix4fv(loc_MV, 1, GL_FALSE, &MV[0][0]);
-
-    unsigned int loc_NM = glGetUniformLocation(shader.getID(), "u_NormalMatrix");
-    glUniformMatrix4fv(loc_NM, 1, GL_FALSE, &NormalMatrix[0][0]);
-
-    glEnable(GL_DEPTH_TEST);
 
     unsigned int nbSpheres = 32;
     std::vector<glm::vec3> randomAxisRotation;
@@ -112,48 +133,130 @@ int main(void)
         randomAxisRotation.push_back(glm::sphericalRand(1.0f));
         randomAxisTranslation.push_back(glm::sphericalRand(2.0f));
     }
-    
-    
+
+    // Textures
+    // Earth
+    glActiveTexture(0);
+    glGenTextures(1, &s_Earth.texID);
+    glBindTexture(GL_TEXTURE_2D, s_Earth.texID);
+    // set the texture wrapping/filtering options (on the currently bound texture object)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // load and generate the texture
+    int width, height, nrChannels;
+    unsigned char* data = stbi_load("C:/dev/opengl/OpenGL-IMAC-S3/res/img/EarthMap.jpg", &width, &height, &nrChannels, 0);
+    if (data)
+    {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else
+    {
+        std::cout << "Failed to load texture" << std::endl;
+    }
+    stbi_image_free(data);
+
+    // Clouds
+    glActiveTexture(1);
+    glGenTextures(1, &s_Earth.texID_Clouds);
+    glBindTexture(GL_TEXTURE_2D, s_Earth.texID_Clouds);
+    // set the texture wrapping/filtering options (on the currently bound texture object)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // load and generate the texture
+    data = stbi_load("C:/dev/opengl/OpenGL-IMAC-S3/res/img/CloudMap.jpg", &width, &height, &nrChannels, 0);
+    if (data)
+    {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else
+    {
+        std::cout << "Failed to load texture" << std::endl;
+    }
+    stbi_image_free(data);
+
+    // Moon
+    glActiveTexture(0);
+    glGenTextures(1, &s_Moon.texID);
+    glBindTexture(GL_TEXTURE_2D, s_Moon.texID);
+    // set the texture wrapping/filtering options (on the currently bound texture object)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // load and generate the texture
+    data = stbi_load("C:/dev/opengl/OpenGL-IMAC-S3/res/img/MoonMap.jpg", &width, &height, &nrChannels, 0);
+    if (data)
+    {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else
+    {
+        std::cout << "Failed to load texture" << std::endl;
+    }
+    stbi_image_free(data);
+
+    // tell opengl for each sampler to which texture unit it belongs to (only has to be done once)
+    s_Earth.shader.Bind(); 
+    glUniform1i(glGetUniformLocation(s_Earth.shader.getID(), "Texture"), 0);
+    glUniform1i(glGetUniformLocation(s_Earth.shader.getID(), "Clouds"), 1);
+    s_Moon.shader.Bind();
+    glUniform1i(glGetUniformLocation(s_Moon.shader.getID(), "Texture"), 0);
+
+    glEnable(GL_DEPTH_TEST);
+
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
     {
+
         /* Render here */
-        glClearColor(0.1, 0.15f, 0.3f, 1.0f);
+        glClearColor(0.1, 0.1f, 0.15f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // Planet
-        shader.Bind();
-        glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 0));
-        model = glm::scale(model, glm::vec3(0.5, 0.5, 0.5));
-        glm::mat4 MVP = projection * view * model;
-        glm::mat4 MV = view * model;
+        // Earth
+        s_Earth.shader.Bind();
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, s_Earth.texID);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, s_Earth.texID_Clouds);
+        glm::mat4 modelEarth = glm::rotate(glm::mat4(1.0f), glm::radians((float)glfwGetTime() * 10), glm::vec3(0, 1, 0));
+        modelEarth = glm::scale(modelEarth, glm::vec3(0.5, 0.5, 0.5));
+        glm::mat4 MVP = projection * view * modelEarth;
+        glm::mat4 MV = view * modelEarth;
         glm::mat4 NormalMatrix = glm::transpose(glm::inverse(MV));
-        glUniformMatrix4fv(loc_MVP, 1, GL_FALSE, &MVP[0][0]);
-        glUniformMatrix4fv(loc_MV, 1, GL_FALSE, &MV[0][0]);
-        glUniformMatrix4fv(loc_NM, 1, GL_FALSE, &NormalMatrix[0][0]);
+        glUniformMatrix4fv(s_Earth.u_MVP, 1, GL_FALSE, &MVP[0][0]);
+        glUniformMatrix4fv(s_Earth.u_MV, 1, GL_FALSE, &MV[0][0]);
+        glUniformMatrix4fv(s_Earth.u_NormalMatrix, 1, GL_FALSE, &NormalMatrix[0][0]);
         glBindVertexArray(VAO);
             glDrawArrays(GL_TRIANGLES, 0, sphere.getVertexCount());
         glBindVertexArray(0);
 
         // Moon
-        shader.Bind();
+        s_Moon.shader.Bind();
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, s_Moon.texID);
         for (size_t i = 0; i < nbSpheres; i++)
         {
-            model = glm::rotate(glm::mat4(1.0f), glm::radians((float)glfwGetTime() * 20), randomAxisRotation[i]);
-            model = glm::translate(model, randomAxisTranslation[i]);
-            model = glm::scale(model, glm::vec3(0.1, 0.1, 0.1));
-            MVP = projection * view * model;
-            MV = view * model;
-            NormalMatrix = glm::transpose(glm::inverse(MV));
-            glUniformMatrix4fv(loc_MVP, 1, GL_FALSE, &MVP[0][0]);
-            glUniformMatrix4fv(loc_MV, 1, GL_FALSE, &MV[0][0]);
-            glUniformMatrix4fv(loc_NM, 1, GL_FALSE, &NormalMatrix[0][0]);
+            glm::mat4 modelMoon = glm::rotate(glm::mat4(1.0f), glm::radians((float)glfwGetTime() * 12), randomAxisRotation[i]);
+            modelMoon = glm::translate(modelMoon, randomAxisTranslation[i]);
+            modelMoon = glm::scale(modelMoon, glm::vec3(0.05, 0.05, 0.05));
+            glm::mat4 MVP = projection * view * modelMoon;
+            glm::mat4 MV = view * modelMoon;
+            glm::mat4 NormalMatrix = glm::transpose(glm::inverse(MV));
+            glUniformMatrix4fv(s_Moon.u_MVP, 1, GL_FALSE, &MVP[0][0]);
+            glUniformMatrix4fv(s_Moon.u_MV, 1, GL_FALSE, &MV[0][0]);
+            glUniformMatrix4fv(s_Moon.u_NormalMatrix, 1, GL_FALSE, &NormalMatrix[0][0]);
         
             glBindVertexArray(VAO);
                 glDrawArrays(GL_TRIANGLES, 0, sphere.getVertexCount());
             glBindVertexArray(0);
         }
-
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);

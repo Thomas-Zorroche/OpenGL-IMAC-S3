@@ -1,3 +1,0 @@
-﻿  Application.cpp
-C:\dev\opengl\TP_6\src\Application.cpp(121,44): warning C4305: 'argument': truncation from 'double' to 'GLfloat'
-  TP_6.vcxproj -> C:\dev\opengl\TP_6\Debug\TP_6.exe

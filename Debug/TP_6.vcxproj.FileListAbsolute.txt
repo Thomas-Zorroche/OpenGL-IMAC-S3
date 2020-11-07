@@ -1,2 +1,0 @@
-C:\dev\opengl\TP_6\Debug\TP_6.exe
-C:\dev\opengl\TP_6\Debug\TP_6.pdb
