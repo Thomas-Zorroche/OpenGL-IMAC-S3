@@ -13,8 +13,12 @@
 #include <glm/gtc/random.hpp>
 
 #include "Shader.h"
+#include "TrackballCamera.hpp"
 
 #include "glimac/Sphere.hpp"
+
+#define Width 900.0f
+#define Heigth 640.0f
 
 struct EarthProgram
 {
@@ -53,6 +57,39 @@ struct MoonProgram
     }
 };
 
+// Events
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+{
+    TrackballCamera* camera = (TrackballCamera*)glfwGetWindowUserPointer(window);
+    if (action == GLFW_RELEASE)
+        camera->SetCanTurn(false);
+    else if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
+        camera->SetCanTurn(true);
+}
+void mouse_callback(GLFWwindow* window, double xpos, double ypos)
+{
+    TrackballCamera* camera = (TrackballCamera*)glfwGetWindowUserPointer(window);
+    float xoffset = xpos - camera->GetLastX();
+    float yoffset = ypos - camera->GetLastY();
+    camera->SetLastX(xpos);
+    camera->SetLastY(ypos);
+    if (camera->GetCanTurn())
+    {
+        xoffset *= camera->GetSensitivity();
+        yoffset *= camera->GetSensitivity();
+
+        camera->rotateLeft(yoffset);
+        camera->rotateUp(xoffset);
+    }
+}
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+{
+    TrackballCamera * camera = (TrackballCamera *)glfwGetWindowUserPointer(window);
+    camera->moveFront(yoffset);
+}
+
+
+
 int main(void)
 {
     GLFWwindow* window;
@@ -62,7 +99,7 @@ int main(void)
         return -1;
 
     /* Create a windowed mode window and its OpenGL context */
-    window = glfwCreateWindow(900, 640, "Hello World", NULL, NULL);
+    window = glfwCreateWindow(Width, Heigth, "Hello World", NULL, NULL);
     if (!window)
     {
         glfwTerminate();
@@ -78,6 +115,19 @@ int main(void)
         std::cout << "Failed to initialize GLAD" << std::endl;
         return -1;
     }
+
+    // Hide the cursor
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+    // Input Callback Function
+    glfwSetCursorPosCallback(window, mouse_callback);
+    glfwSetScrollCallback(window, scroll_callback);
+    glfwSetMouseButtonCallback(window, mouse_button_callback);
+
+    // Camera
+    TrackballCamera camera;
+
+    glfwSetWindowUserPointer(window, &camera);
 
     // Vertices Input 
     GLfloat vertices[] = {
@@ -120,10 +170,10 @@ int main(void)
     // Shaders
     EarthProgram s_Earth("res/shaders/multi3DTex.shader");
     MoonProgram s_Moon("res/shaders/3DTex.shader");
-
-    // Matrices
-    glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -5.0f));
+    
+    // Projection Matrix
     glm::mat4 projection = glm::perspective(glm::radians(45.0f), 900.0f / 640.0f, 0.1f, 100.0f);
+    glm::mat4 view = camera.getViewMatrix();
 
     unsigned int nbSpheres = 32;
     std::vector<glm::vec3> randomAxisRotation;
@@ -214,7 +264,9 @@ int main(void)
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
     {
-
+        // View Matrix
+        glm::mat4 view = camera.getViewMatrix();
+        
         /* Render here */
         glClearColor(0.1, 0.1f, 0.15f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -271,3 +323,5 @@ int main(void)
     glfwTerminate();
     return 0;
 }
+
+
