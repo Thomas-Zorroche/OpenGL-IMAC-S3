@@ -14,6 +14,8 @@
 
 #include "Shader.h"
 #include "TrackballCamera.hpp"
+#include "FreeflyCamera.hpp"
+#include "BaseCamera.hpp"
 
 #include "glimac/Sphere.hpp"
 
@@ -60,7 +62,7 @@ struct MoonProgram
 // Events
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
-    TrackballCamera* camera = (TrackballCamera*)glfwGetWindowUserPointer(window);
+    BaseCamera* camera = (BaseCamera*)glfwGetWindowUserPointer(window);
     if (action == GLFW_RELEASE)
         camera->SetCanTurn(false);
     else if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
@@ -68,7 +70,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 }
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 {
-    TrackballCamera* camera = (TrackballCamera*)glfwGetWindowUserPointer(window);
+    BaseCamera* camera = (BaseCamera*)glfwGetWindowUserPointer(window);
     float xoffset = xpos - camera->GetLastX();
     float yoffset = ypos - camera->GetLastY();
     camera->SetLastX(xpos);
@@ -84,8 +86,22 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 }
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
-    TrackballCamera * camera = (TrackballCamera *)glfwGetWindowUserPointer(window);
+    BaseCamera* camera = (BaseCamera *)glfwGetWindowUserPointer(window);
     camera->moveFront(yoffset);
+}
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+    BaseCamera* camera = (BaseCamera*)glfwGetWindowUserPointer(window);
+    if (action == GLFW_RELEASE)
+        camera->SetActiveKey('A');
+    else if (key == GLFW_KEY_W && action == GLFW_PRESS)   // W Qwerty = Z Azerty
+        camera->SetActiveKey('Z');
+    else if (key == GLFW_KEY_S && action == GLFW_PRESS)   // S Qwerty = S Azerty
+        camera->SetActiveKey('S');
+    else if (key == GLFW_KEY_A && action == GLFW_PRESS)   // A Qwerty = Q Azerty
+        camera->SetActiveKey('Q');
+    else if (key == GLFW_KEY_D && action == GLFW_PRESS)   // D Qwerty = D Azerty
+        camera->SetActiveKey('D');
 }
 
 
@@ -123,11 +139,15 @@ int main(void)
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback);
     glfwSetMouseButtonCallback(window, mouse_button_callback);
+    glfwSetKeyCallback(window, key_callback);
+
 
     // Camera
-    TrackballCamera camera;
+    // Choose between Trackball or Freefly Camera
+    //BaseCamera* camera = new TrackballCamera();
+    BaseCamera* camera = new FreeflyCamera;
 
-    glfwSetWindowUserPointer(window, &camera);
+    glfwSetWindowUserPointer(window, camera);
 
     // Vertices Input 
     GLfloat vertices[] = {
@@ -154,9 +174,6 @@ int main(void)
         // 2. (VBO)
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
         glBufferData(GL_ARRAY_BUFFER, sphere.getVertexCount() * 8 * sizeof(float), sphere.getDataPointer(), GL_STATIC_DRAW);
-        // 3. (IBO)
-        /*glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);*/
         // 3. vertex attributes pointers
         glEnableVertexAttribArray(0); // Position
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GL_FLOAT), (GLvoid*)0);
@@ -173,7 +190,7 @@ int main(void)
     
     // Projection Matrix
     glm::mat4 projection = glm::perspective(glm::radians(45.0f), 900.0f / 640.0f, 0.1f, 100.0f);
-    glm::mat4 view = camera.getViewMatrix();
+    glm::mat4 view = camera->getViewMatrix();
 
     unsigned int nbSpheres = 32;
     std::vector<glm::vec3> randomAxisRotation;
@@ -264,8 +281,27 @@ int main(void)
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
     {
+        // Inuts Key
+        switch (camera->GetActiveKey())
+        {
+        case 'Z':
+            camera->moveFront(camera->GetSpeed());
+            break;
+        case 'Q':
+            camera->moveLeft(camera->GetSpeed());
+            break;
+        case 'S':
+            camera->moveFront(-camera->GetSpeed());
+            break;
+        case 'D':
+            camera->moveLeft(-camera->GetSpeed());
+            break;
+        case 'A':
+            break;
+        }
+
         // View Matrix
-        glm::mat4 view = camera.getViewMatrix();
+        glm::mat4 view = camera->getViewMatrix();
         
         /* Render here */
         glClearColor(0.1, 0.1f, 0.15f, 1.0f);
@@ -319,6 +355,7 @@ int main(void)
 
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
+    delete(camera);
 
     glfwTerminate();
     return 0;
