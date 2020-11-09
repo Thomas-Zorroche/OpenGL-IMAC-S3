@@ -1,6 +1,7 @@
 #pragma once
 
-#define _USE_MATH_DEFINES
+//#define _USE_MATH_DEFINES
+#define M_PI 3.14
 #include <cmath>
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"

@@ -185,7 +185,7 @@ int main(void)
     glBindVertexArray(0);
 
     // Shaders
-    EarthProgram s_Earth("res/shaders/multi3DTex.shader");
+    EarthProgram s_Earth("res/shaders/DirectionalLight.shader");
     MoonProgram s_Moon("res/shaders/3DTex.shader");
     
     // Projection Matrix
@@ -270,13 +270,14 @@ int main(void)
     stbi_image_free(data);
 
     // tell opengl for each sampler to which texture unit it belongs to (only has to be done once)
-    s_Earth.shader.Bind(); 
+    /*s_Earth.shader.Bind(); 
     glUniform1i(glGetUniformLocation(s_Earth.shader.getID(), "Texture"), 0);
     glUniform1i(glGetUniformLocation(s_Earth.shader.getID(), "Clouds"), 1);
     s_Moon.shader.Bind();
-    glUniform1i(glGetUniformLocation(s_Moon.shader.getID(), "Texture"), 0);
+    glUniform1i(glGetUniformLocation(s_Moon.shader.getID(), "Texture"), 0);*/
 
     glEnable(GL_DEPTH_TEST);
+
 
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
@@ -302,6 +303,23 @@ int main(void)
 
         // View Matrix
         glm::mat4 view = camera->getViewMatrix();
+
+        // Uniforms Blinn-Phong
+        /*
+        * things to do when changing type light :
+        * - Load correct Shader
+        * - change w coordinate (1 for point, 0 for directional)
+        * - u_LightPos_vs or u_LightDir_vs
+        */
+        glm::mat4 modelLight = glm::rotate(glm::mat4(1.0f), glm::radians((float)glfwGetTime() * 50), glm::vec3(0, 1, 0));
+        glm::vec4 LightDirection = view * modelLight * glm::vec4(1, 1, 1, 0);
+        glUniform3f(glGetUniformLocation(s_Earth.shader.getID(), "u_LightDir_vs"), LightDirection.x, LightDirection.y, LightDirection.z);
+        glUniform3f(glGetUniformLocation(s_Earth.shader.getID(), "u_LightIntensity"), 1.0, 1.0, 1.0);
+        glUniform1f(glGetUniformLocation(s_Earth.shader.getID(), "u_Shininess"), 16.0);
+        // Coeff de reflection diffuse
+        glUniform3f(glGetUniformLocation(s_Earth.shader.getID(), "u_Kd"), 0.5, 0.0, 0.0);
+        // Coeff de reflection glossy
+        glUniform3f(glGetUniformLocation(s_Earth.shader.getID(), "u_Ks"), 1.0, 1.0, 1.0);
         
         /* Render here */
         glClearColor(0.1, 0.1f, 0.15f, 1.0f);
@@ -326,7 +344,7 @@ int main(void)
         glBindVertexArray(0);
 
         // Moon
-        s_Moon.shader.Bind();
+        /*s_Moon.shader.Bind();
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, s_Moon.texID);
         for (size_t i = 0; i < nbSpheres; i++)
@@ -344,7 +362,7 @@ int main(void)
             glBindVertexArray(VAO);
                 glDrawArrays(GL_TRIANGLES, 0, sphere.getVertexCount());
             glBindVertexArray(0);
-        }
+        }*/
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);

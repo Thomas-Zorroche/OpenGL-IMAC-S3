@@ -30,5 +30,5 @@ public:
 
 protected:
 	char _ActiveKey = 'A';
-	float _Speed = 0.01f;
+	float _Speed = 0.05f;
 };
